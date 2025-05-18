@@ -12,9 +12,9 @@ WITH users_by_month AS (
 -- Step 2: Calculate the average transactions per user across all months
 avg_transactions_per_user AS (
     SELECT 
-        owner_id,  -- User ID
+        owner_id,  -- user ID
         AVG(transactions_count) AS avg_transactions_per_month  -- Calculate the average number of transactions per month for each user
-    FROM users_by_month  -- We use the result from Step 1 here
+    FROM users_by_month  -- i used the result from Step 1 here
     GROUP BY owner_id  -- Group by user to get an average per user
 )
 
@@ -22,10 +22,10 @@ avg_transactions_per_user AS (
 SELECT 
     CASE 
         WHEN avg_transactions_per_month >= 10 THEN 'High Frequency'  -- High frequency if avg is 10 or more
-        WHEN avg_transactions_per_month BETWEEN 3 AND 9 THEN 'Medium Frequency'  -- Medium frequency if avg is between 3 and 9
+        WHEN avg_transactions_per_month BETiEN 3 AND 9 THEN 'Medium Frequency'  -- Medium frequency if avg is betien 3 and 9
         ELSE 'Low Frequency'  -- Low frequency if avg is less than 3
     END AS frequency_category,  -- The frequency category for each user
     COUNT(owner_id) AS user_count,  -- Count the number of users in each frequency category
     AVG(avg_transactions_per_month) AS avg_transactions_per_month  -- Average of average transactions per user in each category
-FROM avg_transactions_per_user  -- We use the result from Step 2 here
+FROM avg_transactions_per_user  -- i used the result from Step 2 here
 GROUP BY frequency_category;  -- Group by frequency category to get counts and averages per category
