@@ -2,8 +2,8 @@ SELECT
   uc.id AS owner_id,
   CONCAT(uc.`first_name`, ' ', uc.`last_name`) AS NAME,-- Concatenate the user's first and last name as NAME
   COUNT(CASE WHEN pp.is_regular_savings = 1 THEN 1 END) AS savings_count, -- Count the number of savings accounts where is_regular_savings = 1
-  COUNT(CASE WHEN pp.is_fixed_investment = 1 THEN 1 END) AS investment_count,-- Count the number of investments where is_fixed_investment = 1
-  ROUND(SUM(ss.`amount`), 2) AS total_deposit -- Sum the total amount deposited by the user across all savings accounts in 2 decimals
+  COUNT(CASE WHEN pp.`is_a_fund`= 1 THEN 1 END) AS investment_count,-- Count the number of investments where is_fixed_investment = 1
+  ROUND(SUM(ss.`confirmed_amount`), 2) AS total_deposit -- Sum the total amount deposited by the user across all savings accounts in 2 decimals
 FROM
   `users_customuser` uc
   INNER JOIN `savings_savingsaccount` ss ON uc.id = ss.`owner_id` -- Join with the savings_savingsaccount table to get the user's savings information
