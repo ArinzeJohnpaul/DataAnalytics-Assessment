@@ -1,111 +1,97 @@
-# DataAnalytics-Assessment
+# This project contains SQL queries designed to extract insights from a financial platform’s user activity. Key areas include identifying multi-product users, analyzing transaction frequency, calculating tenure and customer lifetime value (CLV), and converting currency data.
 
+---
+##  Per-Question Explanations
 
-### This project contains a series of SQL queries designed to extract insights from savings and user-related data, including transaction behavior, customer tenure, and estimated Customer Lifetime Value (CLV). The queries are written for a MySQL database and focus on business intelligence-style reporting.
+### 1. **User Engagement by Product Usage**
+- **Query Goal**:  to find customers with at least one funded savings plan AND one funded investment plan, sorted by total deposits.
+- **Key Metrics**:
+  - `savings_count`: Count of accounts linked to regular savings plans.
+  - `investment_count`: Count of accounts linked to fund-based investment plans.
+  - `total_deposit`: Total confirmed deposits, converted from kobo to naira using:
+
+  
+- **Purpose**: Spot high-engagement users and understand their deposit volume across product categories.
+- **Logic**:
+  - Joins `users_customuser`, `savings_savingsaccount`, and `plans_plan`.
+  - Filters to only include users with at least one savings and one investment plan.
+  - Orders by total deposit (descending) to highlight highest contributors.
+---
+
+### 2. **Transaction Frequency Segmentation**
+**Query Goal:** Segment users based on how frequently they transact monthly.
+
+- **Logic**:
+
+First CTE (users_by_month) calculates the number of transactions per user for each year-month combination.
+
+Second CTE (avg_transactions_per_user) computes each user's average monthly transaction count.
+
+The final query classifies users as:
+
+- High Frequency: ≥ 10 transactions/month
+
+- Medium Frequency: 3–9 transactions/month
+
+- Low Frequency: < 3 transactions/month
+
+Use Case: Helpful for identifying power users vs dormant accounts for targeted outreach or rewards programs.
 
 ---
 
-### ✅ Per-Question Explanations
+### 3. **Recent Activity by Plan Type**
 
-#### 1. **Day Difference Between Transaction Date and Today**
 
-```sql
-SELECT DATEDIFF(CURDATE(), transaction_date) AS day_difference ...
-```
+**Query Goal:** Identify users with Savings or Investment accounts who have had activity in the last 365 days.
 
-* **Approach**: Used MySQL’s `DATEDIFF()` function to compute the number of days between a transaction date and the current date.
-* **Use Case**: Helps identify how long ago the last transaction occurred, useful for inactivity or churn analysis.
+**Key Logic:**
 
----
+Uses a CASE statement to classify each plan as Savings or Investments.
 
-#### 2. **Day Difference per Plan and User**
+- Finds each user’s most recent transaction date using MAX(DATE(transaction_date)).
 
-```sql
-SELECT 
-  ss.plan_id, ss.owner_id, pp.description, MAX(DATE(transaction_date)), ...
-```
+- Computes days of inactivity using:
 
-* **Approach**: Used `MAX(transaction_date)` per user-plan group to identify the most recent transaction, then calculated the day difference from today.
-* **Insight**: Highlights when a user last interacted with a particular plan.
+**Use Case:** Useful for identifying users still engaged on the platform and differentiating between types of financial behavior (savings vs investment).
 
 ---
 
-#### 3. **Difference in Months Between Last Transaction and Today**
+### 4. **Customer Lifetime Value (CLV) Estimation**
 
-```sql
-TIMESTAMPDIFF(MONTH, MAX(DATE(transaction_date)), CURDATE()) AS month_difference
-```
+* **Goal**: Estimate expected user value based on past behavior.
+* **Logic**:
 
-* **Approach**: Switched from `DATEDIFF()` to `TIMESTAMPDIFF(MONTH, ...)` for results in full months.
-* **Why**: Monthly intervals are more useful for long-term planning and metrics like retention or renewal cycles.
+  * Count transactions per user.
+  * Compute user tenure.
+  * Project average monthly transactions over 12 months.
+  * Multiply by assumed average profit (₦0.001 per transaction).
+* **Key Expression**:
 
----
+  ```sql
+  (transaction_count / NULLIF(tenure_months, 0)) * 12 * avg_profit_per_transaction
+  ```
 
-#### 4. **Tenure Calculation for Users**
-
-```sql
-TIMESTAMPDIFF(MONTH, DATE(created_on), CURDATE()) AS tenure
-```
-
-* **Approach**: Calculated customer tenure in full months since account creation.
-* **Use Case**: Foundational for normalizing activity (e.g., transactions per month).
 
 ---
 
-#### 5. **Currency Conversion from Kobo to Naira**
+##  Challenges & Solutions
 
-```sql
-SELECT amount / 100 AS amount_in_naira ...
-```
-
-* **Approach**: Simple division to convert from kobo (₦1 = 100 kobo).
-* **Use Case**: Standardizing amounts for financial reporting or display.
-
----
-
-#### 6. **Customer Lifetime Value (CLV) Estimation**
-
-```sql
-(transaction_count / NULLIF(tenure_months, 0)) * 12 * avg_profit_per_transaction AS estimated_clv
-```
-
-* **Approach**:
-
-  * Used two CTEs:
-
-    * One for transaction count and average profit.
-    * One for tenure calculation and joining with user data.
-  * Estimated CLV by projecting average monthly transaction rate over 12 months and multiplying by average profit.
-* **Assumption**: Profit is estimated as `0.001` per transaction; can be customized.
+| Challenge                                             | Solution                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| Avoiding divide-by-zero in tenure-based calculations  | Used `NULLIF(tenure_months, 0)`                              |
+| Formatting currency values                            | Applied `ROUND(..., 2)` for precision                        |
+| Segmenting users by logic-heavy criteria              | Broke down steps using CTEs and `CASE` statements            |
+| Ensuring data integrity when aggregating across joins | Used inner joins and grouped by user ID to avoid duplication |
 
 ---
 
-### ⚠️ Challenges & Solutions
+## File Overview
 
-| Challenge                                         | Solution                                                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Calculating aggregated date differences per group | Used `MAX(transaction_date)` within `GROUP BY`, then applied `DATEDIFF()` or `TIMESTAMPDIFF()` on the result. |
-| Avoiding division by zero in CLV calculation      | Used `NULLIF(tenure_months, 0)` to prevent division errors.                                                   |
-| Converting monetary values from kobo to naira     | Used simple division (`amount / 100`) and optionally formatted to 2 decimal places using `ROUND()`.           |
-| Estimating CLV without subqueries for each row    | Used CTEs and window functions to structure the logic cleanly and efficiently.                                |
-
----
-
-### 📂 Files
-
-* `clv_analysis.sql` – Contains the complete CLV and tenure calculation query
-* `transaction_recency.sql` – Queries for recency analysis per user/plan
-* `tenure_query.sql` – Query to calculate tenure in months
-* `amount_conversion.sql` – Kobo-to-naira conversion logic
+| File                                     | Description                                                           |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| `Assessment_Q1.sql`                      | High-Value Customers with Multiple Products                           |
+| `Assessment_Q2.sql`                      | Transaction Frequency Analysis                                        |
+| `Assessment_Q3.sql`                      | Account Inactivity Alert                                              |
+| `Assessment_Q4.sql`                      | Customer Lifetime Value (CLV) Estimation                                     |
 
 ---
-
-### 💡 Next Steps
-
-* Add filtering for specific user segments (e.g., active vs. inactive users).
-* Introduce profit margin adjustments based on plan type.
-* Format currency outputs for display (e.g., ₦ with decimals).
-
----
-
-Would you like me to format this into an actual `README.md` file you can commit to GitHub?
