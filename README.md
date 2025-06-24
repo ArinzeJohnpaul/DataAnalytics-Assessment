@@ -15,7 +15,7 @@
 - **Logic**:
   - Joins `users_customuser`, `savings_savingsaccount`, and `plans_plan`.
   - Filters to only include users with at least one savings and one investment plan.
-  - Orders by total deposit (descending) to highlight highest contributors.
+  - Orders by total deposit (descending) to highlight the highest contributors.
 ---
 
 ### 2. **Transaction Frequency Segmentation**
